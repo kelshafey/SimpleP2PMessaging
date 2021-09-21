@@ -21,7 +21,7 @@ public class Server extends Thread
         this.gui = gui;
         try 
         {
-            server = new ServerSocket(2050);
+            server = new ServerSocket(2020);
             System.out.println("A SERVER HAS STARTED");
         } 
         catch (IOException ex) 

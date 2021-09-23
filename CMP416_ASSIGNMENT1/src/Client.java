@@ -27,6 +27,15 @@ public class Client extends Thread
     public void sendMessage(String message)
     {
         out.println(message);
+        gui.updateMessageLog("> Sent: " + message);
+    }
+    
+    public boolean hasSuccessfulConnection()
+    {
+        if(serverSocket == null)
+            return false;
+        else
+            return serverSocket.isConnected();
     }
     
     public void closeConnection()
@@ -34,10 +43,11 @@ public class Client extends Thread
         try 
         {
             gui.disableMessageOptions();
-            out.println("EXIT");
-            serverSocket.close();
+            out.println("EXIT");    //should use something that users would not normally type if real application
+            serverSocket.close();   //but this is fine for right now
             in.close();
             out.close();
+            System.exit(0);
         } 
         catch(IOException ex) 
         {
@@ -57,6 +67,9 @@ public class Client extends Thread
                 out = new PrintWriter(new OutputStreamWriter(serverSocket.getOutputStream()), true);
                 System.out.println("A CLIENT HAS STARTED");
                 gui.enableMessageOptions();
+                gui.updateMessageLog("** CONNECTION INITIATED **");
+                gui.disableConnectionOptions();
+                gui.updateButtonText();
             }
             else
             {
@@ -65,8 +78,8 @@ public class Client extends Thread
         } 
         catch(IOException ex) 
         {
-            JOptionPane.showMessageDialog(null, "Connection Could not be Established :(", "Connection Failed", JOptionPane.ERROR_MESSAGE);
-            System.exit(0);
+            JOptionPane.showMessageDialog(null, "Connection Could not be Established", "Connection Failed", JOptionPane.ERROR_MESSAGE);
+            //System.exit(0);
         }
     }
 }

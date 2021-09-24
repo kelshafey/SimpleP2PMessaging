@@ -174,7 +174,6 @@ public class ChatGUI extends javax.swing.JFrame
 
     private void btnSendMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendMessageActionPerformed
         // TODO add your handling code here:
-        System.out.println("SEND MESSAGE");
         client.sendMessage(txtMessage.getText());
         txtMessage.setText("");
     }//GEN-LAST:event_btnSendMessageActionPerformed

@@ -1,6 +1,4 @@
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -14,7 +12,6 @@ public class Client extends Thread
     private String port;
     private Socket serverSocket;
     private ChatGUI gui;
-    private BufferedReader in;
     private PrintWriter out;
     
     Client(String IP, String port, ChatGUI gui)
@@ -30,6 +27,11 @@ public class Client extends Thread
         gui.updateMessageLog("> Sent: " + message);
     }
     
+    public void announcePort(int port)
+    {
+        out.println("/port " + port);
+    }
+    
     public boolean hasSuccessfulConnection()
     {
         if(serverSocket == null)
@@ -43,11 +45,9 @@ public class Client extends Thread
         try 
         {
             gui.disableMessageOptions();
-            out.println("EXIT");    //should use something that users would not normally type if real application
-            serverSocket.close();   //but this is fine for right now
-            in.close();
+            out.println("/exit");    //could be changed to something that users would not normally type if real application
+            serverSocket.close();    //but this is just to implement the logic of shutdown
             out.close();
-            System.exit(0);
         } 
         catch(IOException ex) 
         {
@@ -63,13 +63,13 @@ public class Client extends Thread
         if(!(IP.isEmpty()) && !(port.isEmpty()))
             {
                 serverSocket = new Socket(IP, Integer.parseInt(port));
-                in = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
                 out = new PrintWriter(new OutputStreamWriter(serverSocket.getOutputStream()), true);
                 System.out.println("A CLIENT HAS STARTED");
                 gui.enableMessageOptions();
                 gui.updateMessageLog("** CONNECTION INITIATED **");
                 gui.disableConnectionOptions();
-                gui.updateButtonText();
+                gui.setButtonDisconnect();
+                announcePort(Server.getPort());
             }
             else
             {
@@ -79,7 +79,6 @@ public class Client extends Thread
         catch(IOException ex) 
         {
             JOptionPane.showMessageDialog(null, "Connection Could not be Established", "Connection Failed", JOptionPane.ERROR_MESSAGE);
-            //System.exit(0);
         }
     }
 }

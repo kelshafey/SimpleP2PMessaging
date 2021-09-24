@@ -1,7 +1,9 @@
-
 import java.awt.Color;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import javax.swing.SwingUtilities;
 
 
 
@@ -17,6 +19,7 @@ public class ChatGUI extends javax.swing.JFrame
      */
     
     Client client = null;
+    Server server = null;
     
     public ChatGUI() 
     {
@@ -29,17 +32,34 @@ public class ChatGUI extends javax.swing.JFrame
         txtAreaMessageLog.setEditable(false);
         disableMessageOptions();
         
-        new Server(this).start(); //don't need to maintain a reference to the server
+        server = new Server(this);
+        server.start();
+        
         this.addWindowListener(new WindowAdapter() 
         {
             public void windowClosing(WindowEvent e) 
             {
                 System.out.println("CLOSING");
                 if(client != null && client.hasSuccessfulConnection())
+                {
                     client.closeConnection();
+                    if(server != null)
+                    {
+                        server.closeConnection();
+                    }
+                }
             }
         });
         
+        txtMessage.addKeyListener(new KeyAdapter() //allows to send messages with enter
+        {
+            @Override
+            public void keyPressed(KeyEvent e) 
+            {
+                if(e.getKeyCode() == KeyEvent.VK_ENTER)
+                    btnSendMessage.doClick();
+            }
+        });
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -154,6 +174,7 @@ public class ChatGUI extends javax.swing.JFrame
 
     private void btnSendMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendMessageActionPerformed
         // TODO add your handling code here:
+        System.out.println("SEND MESSAGE");
         client.sendMessage(txtMessage.getText());
         txtMessage.setText("");
     }//GEN-LAST:event_btnSendMessageActionPerformed
@@ -176,11 +197,22 @@ public class ChatGUI extends javax.swing.JFrame
         
         else if(btnConnectDisconnect.getText().equals("Shutdown"))
         {
+            updateMessageLog("** DISCONNECTED **");
             client.closeConnection();
+            server.closeConnection(); //not sure if necessary to close connections, if creating a new server anyways
+            restartServer();
+            
+            enableConnectionOptions();
             btnConnectDisconnect.setText("Connect");
         }
     }//GEN-LAST:event_btnConnectDisconnectActionPerformed
 
+    public void restartServer()
+    {
+        server = new Server(this);
+        server.start();
+    }
+    
     public void enableMessageOptions()
     {
         btnSendMessage.setEnabled(true);
@@ -191,6 +223,14 @@ public class ChatGUI extends javax.swing.JFrame
     {
         btnSendMessage.setEnabled(false);
         txtMessage.setEnabled(false);
+    }
+    
+    public void enableConnectionOptions()
+    {
+        txtIP.setEditable(true);
+        txtPort.setEditable(true);
+        txtIP.setBackground(Color.WHITE);
+        txtPort.setBackground(Color.WHITE);
     }
     
     public void disableConnectionOptions()
@@ -206,7 +246,12 @@ public class ChatGUI extends javax.swing.JFrame
         txtAreaMessageLog.append(text + "\n");
     }
     
-    public void updateButtonText()
+    public void setButtonConnect()
+    {
+        btnConnectDisconnect.setText("Connect");
+    }
+    
+    public void setButtonDisconnect()
     {
         btnConnectDisconnect.setText("Shutdown");
     }

@@ -1,31 +1,26 @@
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.Timer;
 
 public class Server extends Thread
 {
+    private static int port = 2083;
     private ChatGUI gui;
     private ServerSocket server;
     private Socket clientSocket;
     private BufferedReader in;
-    private PrintWriter out;
-    boolean clientConnected = true;
+    private boolean clientConnected = true;
     
     Server(ChatGUI gui)
     {
         this.gui = gui;
         try 
         {
-            server = new ServerSocket(2047);
+            server = new ServerSocket(port);
             System.out.println("A SERVER HAS STARTED");
         } 
         catch (IOException ex) 
@@ -34,16 +29,21 @@ public class Server extends Thread
         }
     }
     
+    public static int getPort() { return port; }
+    
     public void closeConnection()
     {
         try 
         {
-            server.close();
-            clientSocket.close();
-            in.close();
-            out.close();
-            System.out.println("SERVER CLOSING");
             clientConnected = false;
+            server.close();
+            
+            if(clientSocket != null)
+                clientSocket.close();
+            if(in != null)
+                in.close();
+            
+            System.out.println("SERVER CLOSING");
         } 
         catch(IOException ex) 
         {
@@ -54,14 +54,16 @@ public class Server extends Thread
     @Override
     public void run()
     {
-        try 
-        {
+        try //could result in a non-fatal exception, if trying to shutdown the server while the server thread is blocked on server.accept()
+        {   
             System.out.println("STARTED LISTENING");
             clientSocket = server.accept();
-            System.out.println("CONNECTED");
-            gui.updateMessageLog("** CONNECTION RECEIVED (" + clientSocket.getInetAddress().getHostAddress() + ") **");
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+            System.out.println("CONNECTED");
+            String port = in.readLine(); //as long as the connection was successful, this is the first thing the client will always send
+            String portNumber = port.split(" ")[1];
+            gui.updateMessageLog("** CONNECTION RECEIVED (" + clientSocket.getInetAddress().getHostAddress() + ") **");
+            gui.updateMessageLog("** Peer Listening at ::" + portNumber + " **");
         }
         catch (IOException ex) 
         {
@@ -72,38 +74,32 @@ public class Server extends Thread
         {
             try 
             {
-                String line = in.readLine();
-                if(!line.isEmpty()) 
+                if(in.ready())
                 {
-                    if(line.equals("EXIT")) //to signal that other peer has shutdown the connection
-                    {                       //should use something that users wouldn't type in real application, but this is fine for now
-                        gui.updateMessageLog("** PEER CLOSED CONNECTION **");
-                        gui.updateMessageLog("** EXITING IN 5 SECONDS **");
-                        gui.disableMessageOptions();
-                        this.closeConnection();
-                    }
-                        
-                    else
+                    String line = in.readLine();
+                    if(!line.isEmpty()) 
                     {
-                        gui.updateMessageLog("> Received: " + line);
+                        if(line.equals("/exit")) //signal from other peer has shutdown the connection 
+                        {                        //could use something else, this is just for a demonstration of the logic
+                            gui.updateMessageLog("** PEER CLOSED CONNECTION **");
+                            gui.disableMessageOptions();
+                            this.closeConnection();
+                            gui.enableConnectionOptions();
+                            gui.setButtonConnect();
+                            gui.restartServer();
+                        }
+                        else 
+                        {
+                            gui.updateMessageLog("> Received: " + line);
+                        }
                     }
                 }
-            } 
+            }
             catch (IOException ex) 
             {
                 Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        
-        Timer timer = new Timer(5000, new ActionListener() 
-        {
-            @Override
-            public void actionPerformed(ActionEvent e) 
-            {
-                System.exit(0);
-            }
-        });
-        timer.setRepeats(false);
-        timer.start();
+        System.out.println("EXITED RUN()");
     }
 }

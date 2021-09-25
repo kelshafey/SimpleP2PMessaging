@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 
 public class Server extends Thread
 {
-    private static int port = 2083;
+    private static int port = 2094;
     private ChatGUI gui;
     private ServerSocket server;
     private Socket clientSocket;
@@ -61,9 +61,10 @@ public class Server extends Thread
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             System.out.println("CONNECTED");
             String port = in.readLine(); //as long as the connection was successful, this is the first thing the client will always send
-            String portNumber = port.split(" ")[1];
+            String portNumber = port.split(" ")[1]; //server reads: /port xyz
             gui.updateMessageLog("** CONNECTION RECEIVED (" + clientSocket.getInetAddress().getHostAddress() + ") **");
             gui.updateMessageLog("** Peer Listening at ::" + portNumber + " **");
+            gui.connectToPeer(clientSocket.getInetAddress().getHostAddress(), portNumber);
         }
         catch (IOException ex) 
         {
@@ -86,7 +87,7 @@ public class Server extends Thread
                             this.closeConnection();
                             gui.enableConnectionOptions();
                             gui.setButtonConnect();
-                            gui.restartServer();
+                            gui.restartClientServer();
                         }
                         else 
                         {

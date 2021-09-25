@@ -13,6 +13,7 @@ public class Client extends Thread
     private Socket serverSocket;
     private ChatGUI gui;
     private PrintWriter out;
+    private boolean connectionStatus = false;
     
     Client(String IP, String port, ChatGUI gui)
     {
@@ -32,18 +33,16 @@ public class Client extends Thread
         out.println("/port " + port);
     }
     
-    public boolean hasSuccessfulConnection()
+    public boolean getConnectionStatus()
     {
-        if(serverSocket == null)
-            return false;
-        else
-            return serverSocket.isConnected();
+        return connectionStatus;
     }
     
     public void closeConnection()
     {
         try 
         {
+            connectionStatus = false;
             gui.disableMessageOptions();
             out.println("/exit");    //could be changed to something that users would not normally type if real application
             serverSocket.close();    //but this is just to implement the logic of shutdown
@@ -64,12 +63,14 @@ public class Client extends Thread
             {
                 serverSocket = new Socket(IP, Integer.parseInt(port));
                 out = new PrintWriter(new OutputStreamWriter(serverSocket.getOutputStream()), true);
+                connectionStatus = true;
                 System.out.println("A CLIENT HAS STARTED");
                 gui.enableMessageOptions();
                 gui.updateMessageLog("** CONNECTION INITIATED **");
                 gui.disableConnectionOptions();
                 gui.setButtonDisconnect();
                 announcePort(Server.getPort());
+                gui.setIPandPort(IP, port); //for the case where client connects back through gui
             }
             else
             {

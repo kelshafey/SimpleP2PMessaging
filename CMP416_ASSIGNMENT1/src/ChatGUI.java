@@ -3,9 +3,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import javax.swing.SwingUtilities;
-
-
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -40,7 +38,7 @@ public class ChatGUI extends javax.swing.JFrame
             public void windowClosing(WindowEvent e) 
             {
                 System.out.println("CLOSING");
-                if(client != null && client.hasSuccessfulConnection())
+                if(client != null && client.getConnectionStatus())
                 {
                     client.closeConnection();
                     if(server != null)
@@ -208,8 +206,36 @@ public class ChatGUI extends javax.swing.JFrame
 
     public void restartServer()
     {
+        //only restarts the server, used by the peer shutting down the connection since both client and server are signalled to close
+        //connections, and only the server needs to be restarted.
         server = new Server(this);
         server.start();
+    }
+    
+    public void restartClientServer()
+    {
+        //after getting a signal to exit from the other peer, this is called to restart the client and server to cut established
+        //communications, since only the server receives the signal, and so this makes sure the client is also closed.
+        server = new Server(this);
+        server.start();
+        client.closeConnection(); //or could do client = null possibly
+    }
+    
+    public void connectToPeer(String IP, String port)
+    {
+        if(client == null || client.getConnectionStatus() == false)
+        {
+            int choice = JOptionPane.showConfirmDialog(null, "Connection Recevied from: " + IP + "\n"
+                                                           + "Listening at Port: " + port + "\n"
+                                                           + "Would you like to establish a connection back?");
+            if (choice == JOptionPane.YES_OPTION) 
+            {
+                client = new Client(IP, port, this);
+                client.start();
+            }
+        }
+        else
+            System.out.println(client.getConnectionStatus());
     }
     
     public void enableMessageOptions()
@@ -253,6 +279,12 @@ public class ChatGUI extends javax.swing.JFrame
     public void setButtonDisconnect()
     {
         btnConnectDisconnect.setText("Shutdown");
+    }
+    
+    public void setIPandPort(String IP, String port)
+    {
+        txtIP.setText(IP);
+        txtPort.setText(port);
     }
     
     /**
